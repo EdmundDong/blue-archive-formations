@@ -2,14 +2,16 @@ var Airtable = require('airtable');
 var base = new Airtable({ apiKey: 'keyLfkfBG43VXN52y' }).base('app24peMma4LiqxIh');
 
 Vue.config.devtools = true
-columns = ["Student", "Overall Tier", "PVP Tier", "Raid Tier", "ATK Type", "DEF Type", "Role", "Class", "DPS"]
-students = []
+columns = ['Student', 'Overall Tier', 'PVP Tier', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+columnsOverall = ['Student', 'Overall Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+columnsPvp = ['Student', 'PVP Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+columnsRaid = ['Student', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 
-async function pullData() {
+function pullData() {
   return new Promise((resolve, reject) => {
     const students = []
     base('Tiers and Roster').select({
-      view: "Have",
+      view: 'Have',
       fields: columns
     }).eachPage(function page(records, fetchNextPage) {
       records.forEach(record => {
@@ -18,53 +20,102 @@ async function pullData() {
       });
       fetchNextPage();
     }, function done(err) {
-      if (err) {reject(err);} else {resolve(students);}
+      if (err) { reject(err); } else { resolve(students); }
     });
   });
 }
 
-heavy = []
-async function heavyFormation() {
-  students = await pullData()
-  console.log('Students', students);
-  let copy = students.slice();
-  console.log('Heavy Formation', copy);
-  const result = students.filter(student => student.Student == 'Iori')
-  console.log('Heavy Formation', result, students);
-  heavy = result
-  return result
+function formHeavy(data) {
+  var students = JSON.parse(JSON.stringify(data));
+  for (let student in students) {
+    console.log('Checking', students[student])
+    if (students[student]['ATK Type'] == 'Piercing') {
+      students[student]['ATK'] /= 2
+      students[student]['Overall Tier'] += 1
+    } else if (students[student]['ATK Type'] == 'Explosive') {
+      students[student]['ATK'] *= 2
+      students[student]['Overall Tier'] -= 1
+    }
+  }
+  students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+  return students
+}
+
+function formLight(data) {
+  var students = JSON.parse(JSON.stringify(data));
+  for (let student in students) {
+    console.log('Checking', students[student])
+    if (students[student]['ATK Type'] == 'Mystic') {
+      students[student]['ATK'] /= 2
+      students[student]['Overall Tier'] += 1
+    } else if (students[student]['ATK Type'] == 'Piercing') {
+      students[student]['ATK'] *= 2
+      students[student]['Overall Tier'] -= 1
+    }
+  }
+  students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+  return students
+}
+
+function formSpecial(data) {
+  var students = JSON.parse(JSON.stringify(data));
+  for (let student in students) {
+    console.log('Checking', students[student])
+    if (students[student]['ATK Type'] == 'Explosive') {
+      students[student]['ATK'] /= 2
+      students[student]['Overall Tier'] += 1
+    } else if (students[student]['ATK Type'] == 'Mystic') {
+      students[student]['ATK'] *= 2
+      students[student]['Overall Tier'] -= 1
+    }
+  }
+  students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+  return students
 }
 
 async function main() {
-  heavy = await heavyFormation()
+  students = await pullData()
+  students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+  console.log('Students', students)
+  heavy = await formHeavy(students)
+  console.log('Heavy', heavy)
+  light = await formLight(students)
+  console.log('Light', heavy)
+  special = await formSpecial(students)
+  console.log('Special', heavy)
 
-  var allTable = new Vue({
-    el: '#allTable',
+  var tableAll = new Vue({
+    el: '#tableAll',
     data: {
+      headers: columnsOverall,
       students: students,
-      headers: columns
+      atkType: students.map(student => student['ATK Type'])
     }
   })
-
-  console.log('Heavy Formation', heavy);
-  var heavyTable = new Vue({
-    el: '#heavyTable',
+  var tableHeavy = new Vue({
+    el: '#tableHeavy',
     data: {
+      headers: columnsOverall,
       students: heavy,
-      headers: columns
+      atkType: heavy.map(student => student['ATK Type'])
     }
   })
-
-  console.log('Heavy Formation', heavy);
-
-  var app = new Vue({
-    el: '#app',
+  var tableLight = new Vue({
+    el: '#tableLight',
     data: {
-      message: 'Hello Vue!'
+      headers: columnsOverall,
+      students: light,
+      atkType: light.map(student => student['ATK Type'])
     }
   })
-
-  
+  var tableSpecial = new Vue({
+    el: '#tableSpecial',
+    data: {
+      headers: columnsOverall,
+      students: special,
+      atkType: special.map(student => student['ATK Type'])
+    }
+  })
 }
 
 main()

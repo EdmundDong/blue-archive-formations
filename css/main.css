@@ -1,0 +1,6 @@
+#tableHeavy .Piercing, #tableLight .Mystic, #tableSpecial .Explosive {
+    background-color: pink;
+}
+#tableHeavy .Explosive, #tableLight .Piercing, #tableSpecial .Mystic {
+    background-color: lightgreen;
+}
