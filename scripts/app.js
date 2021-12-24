@@ -73,6 +73,12 @@ function formSpecial(data) {
   return students
 }
 
+function formPvp(data) {
+  var students = JSON.parse(JSON.stringify(data));
+  students.sort((a, b) => a["PVP Tier"] - b["PVP Tier"] || b["ATK"] - a["ATK"])
+  return students
+}
+
 async function main() {
   students = await pullData()
   students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
@@ -83,6 +89,8 @@ async function main() {
   console.log('Light', heavy)
   special = await formSpecial(students)
   console.log('Special', heavy)
+  pvp = await formPvp(students)
+  console.log('PVP', pvp)
 
   var tableAll = new Vue({
     el: '#tableAll',
@@ -114,6 +122,14 @@ async function main() {
       headers: columnsOverall,
       students: special,
       atkType: special.map(student => student['ATK Type'])
+    }
+  })
+  var tablePVP = new Vue({
+    el: '#tablePVP',
+    data: {
+      headers: columnsPvp,
+      students: pvp,
+      atkType: pvp.map(student => student['ATK Type'])
     }
   })
 }
