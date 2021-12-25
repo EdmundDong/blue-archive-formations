@@ -6,6 +6,7 @@ const columnsOverall = ['Student', 'Overall Tier', 'ATK Type', 'DEF Type', 'Role
 const columnsPvp = ['Student', 'PVP Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 const columnsRaid = ['Student', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 const modes = ['Overall', 'PVP', 'Raid']
+const nTeams = [1, 2]
 
 function pullData() {
     return new Promise((resolve, reject) => {
@@ -27,12 +28,12 @@ function pullData() {
 
 function applySynergy(students, weak, resist) {
     for (const student in students) {
-        if (students[student]['ATK Type'] == weak) {
+        if (students[student]['ATK Type'] === weak) {
             students[student]['ATK'] *= 2
             for (const mode in modes) {
                 students[student][modes[mode] + ' Tier'] -= 1
             }
-        } else if (students[student]['ATK Type'] == resist) {
+        } else if (students[student]['ATK Type'] === resist) {
             students[student]['ATK'] /= 2
             for (const mode in modes) {
                 students[student][modes[mode] + ' Tier'] += 1
@@ -41,7 +42,8 @@ function applySynergy(students, weak, resist) {
     }
 }
 
-function formation(data, defEnemy = 'Overall', type = 'Overall', nTeams = 1) {
+function formation(data, defEnemy = 'Overall', type = 'Overall') {
+    // Resort students based on synergy
     const students = JSON.parse(JSON.stringify(data))
     if (defEnemy === 'light') {
         applySynergy(students, 'Explosive', 'Piercing')
@@ -51,45 +53,65 @@ function formation(data, defEnemy = 'Overall', type = 'Overall', nTeams = 1) {
         applySynergy(students, 'Mystic', 'Explosive')
     }
     students.sort((a, b) => a[type + ' Tier'] - b[type + ' Tier'] || b['ATK'] - a['ATK'])
-    return students
+    // Form teams
+    const nTeams = 2
+    let teams = []
+    let tanks = students.filter(student => student['Class'] === 'Tank')
+    let strikers = students.filter(student => student['Class'] != 'Tank' && student['Role'] === 'Striker')
+    let healers = students.filter(student => student['Student'] === 'Serina' || student['Student'] === 'Hanae')
+    let specials = students.filter(student => student['Class'] != 'Healer' && student['Role'] === 'Special')
+    for (let loop = 0; loop < nTeams; loop++) {
+        teams.push(tanks.shift())
+        teams.push(strikers.shift())
+        teams.push(strikers.shift())
+        teams.push(strikers.shift())
+        teams.push(healers.shift())
+        teams.push(specials.shift())
+        if (loop < nTeams - 1) {
+            teams.push('')
+        }
+    }
+    console.log('Teams', teams)
+    return [students, teams]
 }
 
 async function main() {
-    const students = await formation(await pullData())
+    const rawData = await pullData()
 
     // Overall
+    const students = await formation(rawData)
     console.log('Overall', students)
-    const light = await formation(students, 'light')
+    const light = await formation(rawData, 'light')
     console.log('Overall Light', light)
-    const heavy = await formation(students, 'heavy')
+    const heavy = await formation(rawData, 'heavy')
     console.log('Overall Heavy', heavy)
-    const special = await formation(students, 'special')
+    const special = await formation(rawData, 'special')
     console.log('Overall Special', special)
 
     // PVP
-    const pvp = await formation(students, 'PVP')
+    const pvp = await formation(rawData, 'PVP')
     console.log('PVP', pvp)
 
     // Raid
-    const raidHeavy = await formation(students, 'light', 'Raid')
+    const raidHeavy = await formation(rawData, 'light', 'Raid')
     console.log('Raid Heavy', raidHeavy)
-    const raidLight = await formation(students, 'heavy', 'Raid')
+    const raidLight = await formation(rawData, 'heavy', 'Raid')
     console.log('Raid Light', raidLight)
-    const raidSpecial = await formation(students, 'special', 'Raid')
+    const raidSpecial = await formation(rawData, 'special', 'Raid')
     console.log('Raid Special', raidSpecial)
 
     new Vue({
         el: '#ba-tables',
         data: {
             tables: [
-                { classes: 'ba-table overall', headers: columnsOverall, rows: students, tags: students.map(student => student['ATK Type']) },
-                { classes: 'ba-table overall light', headers: columnsOverall, rows: light, tags: light.map(student => student['ATK Type']) },
-                { classes: 'ba-table overall heavy', headers: columnsOverall, rows: heavy, tags: heavy.map(student => student['ATK Type']) },
-                { classes: 'ba-table overall special', headers: columnsOverall, rows: special, tags: special.map(student => student['ATK Type']) },
-                { classes: 'ba-table pvp', headers: columnsPvp, rows: pvp, tags: pvp.map(student => student['ATK Type']) },
-                { classes: 'ba-table raid light', headers: columnsRaid, rows: raidLight, tags: raidLight.map(student => student['ATK Type']) },
-                { classes: 'ba-table raid heavy', headers: columnsRaid, rows: raidHeavy, tags: raidHeavy.map(student => student['ATK Type']) },
-                { classes: 'ba-table raid special', headers: columnsRaid, rows: raidSpecial, tags: raidSpecial.map(student => student['ATK Type']) }
+                { classes: 'ba-table overall', headers: columnsOverall, rows: students[0], tags: students[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table overall light', headers: columnsOverall, rows: light[0], tags: light[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table overall heavy', headers: columnsOverall, rows: heavy[0], tags: heavy[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table overall special', headers: columnsOverall, rows: special[0], tags: special[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table pvp', headers: columnsPvp, rows: pvp[0], tags: pvp[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table raid light', headers: columnsRaid, rows: raidLight[0], tags: raidLight[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table raid heavy', headers: columnsRaid, rows: raidHeavy[0], tags: raidHeavy[0].map(student => student['ATK Type']) },
+                { classes: 'ba-table raid special', headers: columnsRaid, rows: raidSpecial[0], tags: raidSpecial[0].map(student => student['ATK Type']) }
             ]
         }
     })
@@ -98,14 +120,14 @@ async function main() {
         el: '#ba-teams',
         data: {
             tables: [
-                { classes: 'ba-team overall', headers: columnsOverall, rows: students, tags: students.map(student => student['ATK Type']) },
-                { classes: 'ba-team overall light', headers: columnsOverall, rows: light, tags: light.map(student => student['ATK Type']) },
-                { classes: 'ba-team overall heavy', headers: columnsOverall, rows: heavy, tags: heavy.map(student => student['ATK Type']) },
-                { classes: 'ba-team overall special', headers: columnsOverall, rows: special, tags: special.map(student => student['ATK Type']) },
-                { classes: 'ba-team pvp', headers: columnsPvp, rows: pvp, tags: pvp.map(student => student['ATK Type']) },
-                { classes: 'ba-team raid light', headers: columnsRaid, rows: raidLight, tags: raidLight.map(student => student['ATK Type']) },
-                { classes: 'ba-team raid heavy', headers: columnsRaid, rows: raidHeavy, tags: raidHeavy.map(student => student['ATK Type']) },
-                { classes: 'ba-team raid special', headers: columnsRaid, rows: raidSpecial, tags: raidSpecial.map(student => student['ATK Type']) }
+                { classes: 'ba-team overall', headers: columnsOverall, rows: students[1], tags: students[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team overall light', headers: columnsOverall, rows: light[1], tags: light[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team overall heavy', headers: columnsOverall, rows: heavy[1], tags: heavy[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team overall special', headers: columnsOverall, rows: special[1], tags: special[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team pvp', headers: columnsPvp, rows: pvp[1], tags: pvp[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team raid light', headers: columnsRaid, rows: raidLight[1], tags: raidLight[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team raid heavy', headers: columnsRaid, rows: raidHeavy[1], tags: raidHeavy[1].map(student => student['ATK Type']) },
+                { classes: 'ba-team raid special', headers: columnsRaid, rows: raidSpecial[1], tags: raidSpecial[1].map(student => student['ATK Type']) }
             ]
         }
     })

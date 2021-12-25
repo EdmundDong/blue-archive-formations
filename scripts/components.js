@@ -14,7 +14,7 @@ Vue.component('ba-table', {
                         <td scope='col' v-for='header in headers'>
                             {{ row[header] }}
                         </td>
-                    </tr>a
+                    </tr>
                 </tbody>
             </table>
         </div>
