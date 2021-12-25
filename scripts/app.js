@@ -1,6 +1,6 @@
 Vue.config.devtools = true
-const Airtable = require('airtable');
-const base = new Airtable({ apiKey: 'keyLfkfBG43VXN52y' }).base('app24peMma4LiqxIh');
+const Airtable = require('airtable')
+const base = new Airtable({ apiKey: 'keyLfkfBG43VXN52y' }).base('app24peMma4LiqxIh')
 const columns = ['Student', 'Overall Tier', 'PVP Tier', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 const columnsOverall = ['Student', 'Overall Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 const columnsPvp = ['Student', 'PVP Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
@@ -17,12 +17,12 @@ function pullData() {
             records.forEach(record => {
                 console.log('Retrieved', record.fields.Student)
                 students.push(record.fields)
-            });
-            fetchNextPage();
+            })
+            fetchNextPage()
         }, function done(err) {
-            if (err) { reject(err); } else { resolve(students); }
-        });
-    });
+            if (err) { reject(err) } else { resolve(students) }
+        })
+    })
 }
 
 function applySynergy(students, weak, resist) {
@@ -42,7 +42,7 @@ function applySynergy(students, weak, resist) {
 }
 
 function formation(data, defEnemy = 'Overall', type = 'Overall', nTeams = 1) {
-    const students = JSON.parse(JSON.stringify(data));
+    const students = JSON.parse(JSON.stringify(data))
     if (defEnemy === 'light') {
         applySynergy(students, 'Explosive', 'Piercing')
     } else if (defEnemy === 'heavy') {
