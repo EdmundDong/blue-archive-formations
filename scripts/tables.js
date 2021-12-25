@@ -1,11 +1,10 @@
-var Airtable = require('airtable');
-var base = new Airtable({ apiKey: 'keyLfkfBG43VXN52y' }).base('app24peMma4LiqxIh');
-
 Vue.config.devtools = true
-columns = ['Student', 'Overall Tier', 'PVP Tier', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
-columnsOverall = ['Student', 'Overall Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
-columnsPvp = ['Student', 'PVP Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
-columnsRaid = ['Student', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const Airtable = require('airtable');
+const base = new Airtable({ apiKey: 'keyLfkfBG43VXN52y' }).base('app24peMma4LiqxIh');
+const columns = ['Student', 'Overall Tier', 'PVP Tier', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columnsOverall = ['Student', 'Overall Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columnsPvp = ['Student', 'PVP Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columnsRaid = ['Student', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 
 function pullData() {
     return new Promise((resolve, reject) => {
@@ -25,172 +24,85 @@ function pullData() {
     });
 }
 
-function formHeavy(data) {
-    var students = JSON.parse(JSON.stringify(data));
-    for (let student in students) {
-        console.log('Checking', students[student])
-        if (students[student]['ATK Type'] == 'Piercing') {
+function applySynergy (students, resist, weak) {
+    for (const student in students) {
+        if (students[student]['ATK Type'] == resist) {
             students[student]['ATK'] /= 2
             students[student]['Overall Tier'] += 1
-        } else if (students[student]['ATK Type'] == 'Explosive') {
+            students[student]['PVP Tier'] += 1
+            students[student]['Raid Tier'] += 1
+        } else if (students[student]['ATK Type'] == weak) {
             students[student]['ATK'] *= 2
             students[student]['Overall Tier'] -= 1
+            students[student]['PVP Tier'] -= 1
+            students[student]['Raid Tier'] -= 1
         }
     }
-    students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+}
+
+function form(data, tier='Overall') {
+    const students = JSON.parse(JSON.stringify(data));
+    students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }
 
-function formLight(data) {
-    var students = JSON.parse(JSON.stringify(data));
-    for (let student in students) {
-        console.log('Checking', students[student])
-        if (students[student]['ATK Type'] == 'Mystic') {
-            students[student]['ATK'] /= 2
-            students[student]['Overall Tier'] += 1
-        } else if (students[student]['ATK Type'] == 'Piercing') {
-            students[student]['ATK'] *= 2
-            students[student]['Overall Tier'] -= 1
-        }
-    }
-    students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+function formHeavy(data, tier='Overall') {
+    const students = JSON.parse(JSON.stringify(data));
+    applySynergy(students, 'Piercing', 'Explosive')
+    students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }
 
-function formSpecial(data) {
-    var students = JSON.parse(JSON.stringify(data));
-    for (let student in students) {
-        console.log('Checking', students[student])
-        if (students[student]['ATK Type'] == 'Explosive') {
-            students[student]['ATK'] /= 2
-            students[student]['Overall Tier'] += 1
-        } else if (students[student]['ATK Type'] == 'Mystic') {
-            students[student]['ATK'] *= 2
-            students[student]['Overall Tier'] -= 1
-        }
-    }
-    students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
+function formLight(data, tier='Overall') {
+    const students = JSON.parse(JSON.stringify(data));
+    applySynergy(students, 'Mystic', 'Piercing')
+    students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }
 
-function formPvp(data) {
-    var students = JSON.parse(JSON.stringify(data));
-    students.sort((a, b) => a["PVP Tier"] - b["PVP Tier"] || b["ATK"] - a["ATK"])
+function formSpecial(data, tier='Overall') {
+    const students = JSON.parse(JSON.stringify(data));
+    applySynergy(students, 'Explosive', 'Mystic')
+    students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }
-
-Vue.component('button-counter', {
-    data: function () {
-        return {
-            count: 0
-        }
-    },
-    template: '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
-})
 
 async function main() {
-    students = await pullData()
-    students.sort((a, b) => a["Overall Tier"] - b["Overall Tier"] || b["ATK"] - a["ATK"])
-    console.log('Students', students)
-    heavy = await formHeavy(students)
-    console.log('Heavy', heavy)
-    light = await formLight(students)
-    console.log('Light', heavy)
-    special = await formSpecial(students)
-    console.log('Special', heavy)
-    pvp = await formPvp(students)
+    const students = await form(await pullData())
+
+    // Overall
+    console.log('Overall', students)
+    const heavy = await formHeavy(students)
+    console.log('Overall Heavy', heavy)
+    const light = await formLight(students)
+    console.log('Overall Light', heavy)
+    const special = await formSpecial(students)
+    console.log('Overall Special', heavy)
+
+    // PVP
+    const pvp = await form(students, 'PVP')
     console.log('PVP', pvp)
-    atkTypeOverall = students.map(student => student['ATK Type'])
-    console.log('atkTypeOverall', atkTypeOverall)
+    
+    // Raid
+    const raidHeavy = await formHeavy(students, 'Raid')
+    console.log('Raid Heavy', heavy)
+    const raidLight = await formLight(students, 'Raid')
+    console.log('Raid Light', heavy)
+    const raidSpecial = await formSpecial(students, 'Raid')
+    console.log('Raid Special', heavy)
 
     new Vue({
-        el: '#tableAll',
-        data: {
-            headers: columnsOverall,
-            students: students,
-            atkType: students.map(student => student['ATK Type'])
-        }
-    })
-    new Vue({
-        el: '#tableHeavy',
-        data: {
-            headers: columnsOverall,
-            students: heavy,
-            atkType: heavy.map(student => student['ATK Type'])
-        }
-    })
-    new Vue({
-        el: '#tableLight',
-        data: {
-            headers: columnsOverall,
-            students: light,
-            atkType: light.map(student => student['ATK Type'])
-        }
-    })
-    new Vue({
-        el: '#tableSpecial',
-        data: {
-            headers: columnsOverall,
-            students: special,
-            atkType: special.map(student => student['ATK Type'])
-        }
-    })
-    new Vue({
-        el: '#tablePVP',
-        data: {
-            headers: columnsPvp,
-            students: pvp,
-            atkType: pvp.map(student => student['ATK Type'])
-        }
-    })
-    Vue.component('ba-table', {
-        props: ['headers', 'students'],
-        template: '{{ headers }} {{ students }}'
-        // template: `
-        //     <div class="ba-table">
-        //         <table class="table">
-        //             <thead>
-        //                 <tr>
-        //                     <th scope="col" v-for="header in headers"> {{ header }}</th>
-        //                 </tr>
-        //             </thead>
-        //             <tbody>
-        //                 <tr scope="row" v-for="(student, index) in students" :class="[atkType[index]]">
-        //                     <td scope="col" v-for="header in headers">
-        //                         {{ student[header] }}
-        //                     </td>
-        //                 </tr>
-        //             </tbody>
-        //         </table>
-        //     </div>
-        // `
-    })
-    new Vue({
-        el: '#data',
+        el: '#ba-tables',
         data: {
             tables: [
-                
-            ]
-        }
-    })
-    Vue.component('button-counter', {
-        data: function () {
-            return {
-                count: 0
-            }
-        },
-        template: '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
-    })
-    new Vue({ el: '#components-demo' })
-    Vue.component('blog-post', {
-        props: ['headers', 'students'],
-        template: '<h3>{{ headers }}{{ students }}</h3>'
-    })
-    new Vue({
-        el: '#blog-post-demo',
-        data: {
-            posts: [
-                { headers: columnsOverall, students: students, }
+                { classes: 'ba-table overall', headers: columnsOverall, rows: students, tags: students.map(student => student['ATK Type']) },
+                { classes: 'ba-table overall light', headers: columnsOverall, rows: light, tags: light.map(student => student['ATK Type']) },
+                { classes: 'ba-table overall heavy', headers: columnsOverall, rows: heavy, tags: heavy.map(student => student['ATK Type']) },
+                { classes: 'ba-table overall special', headers: columnsOverall, rows: special, tags: special.map(student => student['ATK Type']) },
+                { classes: 'ba-table pvp', headers: columnsPvp, rows: pvp, tags: pvp.map(student => student['ATK Type']) },
+                { classes: 'ba-table raid light', headers: columnsRaid, rows: raidLight, tags: raidLight.map(student => student['ATK Type']) },
+                { classes: 'ba-table raid heavy', headers: columnsRaid, rows: raidHeavy, tags: raidHeavy.map(student => student['ATK Type']) },
+                { classes: 'ba-table raid special', headers: columnsRaid, rows: raidSpecial, tags: raidSpecial.map(student => student['ATK Type']) }
             ]
         }
     })

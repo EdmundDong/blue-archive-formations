@@ -1,21 +1,22 @@
 Vue.component('ba-table', {
-    props: ['headers', 'students'],
+    props: ['classes', 'headers', 'rows', 'tags'],
     template: `
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col" v-for="header in headers"> {{ header }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr scope="row" v-for="(student, index) in students" :class="[atkType[index]]">
-                    <td scope="col" v-for="header in headers">
-                        {{ student[header] }}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div :class='classes'>
+            <h3>{{ classes.split('-').slice(1).join(' ').toUpperCase() + ' TABLE' }}</h3>
+            <table class='table'>
+                <thead>
+                    <tr>
+                        <th scope='col' v-for='header in headers'>{{ header }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr scope='row' v-for='(row, index) in rows' :class='tags[index]'>
+                        <td scope='col' v-for='header in headers'>
+                            {{ row[header] }}
+                        </td>
+                    </tr>a
+                </tbody>
+            </table>
+        </div>
     `
 })
-
-
