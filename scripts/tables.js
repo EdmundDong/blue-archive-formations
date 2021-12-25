@@ -24,18 +24,18 @@ function pullData() {
     });
 }
 
-function applySynergy (students, resist, weak) {
+function applySynergy (students, weak, resist) {
     for (const student in students) {
-        if (students[student]['ATK Type'] == resist) {
-            students[student]['ATK'] /= 2
-            students[student]['Overall Tier'] += 1
-            students[student]['PVP Tier'] += 1
-            students[student]['Raid Tier'] += 1
-        } else if (students[student]['ATK Type'] == weak) {
+        if (students[student]['ATK Type'] == weak) {
             students[student]['ATK'] *= 2
             students[student]['Overall Tier'] -= 1
             students[student]['PVP Tier'] -= 1
             students[student]['Raid Tier'] -= 1
+        } else if (students[student]['ATK Type'] == resist) {
+            students[student]['ATK'] /= 2
+            students[student]['Overall Tier'] += 1
+            students[student]['PVP Tier'] += 1
+            students[student]['Raid Tier'] += 1
         }
     }
 }
@@ -46,23 +46,23 @@ function form(data, tier='Overall') {
     return students
 }
 
-function formHeavy(data, tier='Overall') {
+function formLight(data, tier='Overall') {
     const students = JSON.parse(JSON.stringify(data));
-    applySynergy(students, 'Piercing', 'Explosive')
+    applySynergy(students, 'Explosive', 'Piercing')
     students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }
 
-function formLight(data, tier='Overall') {
+function formHeavy(data, tier='Overall') {
     const students = JSON.parse(JSON.stringify(data));
-    applySynergy(students, 'Mystic', 'Piercing')
+    applySynergy(students, 'Piercing', 'Mystic')
     students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }
 
 function formSpecial(data, tier='Overall') {
     const students = JSON.parse(JSON.stringify(data));
-    applySynergy(students, 'Explosive', 'Mystic')
+    applySynergy(students, 'Mystic', 'Explosive')
     students.sort((a, b) => a[tier + ' Tier'] - b[tier + ' Tier'] || b['ATK'] - a['ATK'])
     return students
 }

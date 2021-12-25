@@ -6,11 +6,11 @@ h3, th, td {
     color: #d8d4cf;
 }
 /* Highlight row shifts */
-.heavy .Piercing td, .light .Mystic td, .special .Explosive td {
-    background-color: pink;
+.light .Explosive td, .heavy .Piercing td, .special .Mystic td {
+    background-color: lightgreen;
     color: #212529;
 }
-.heavy .Explosive td, .light .Piercing td, .special .Mystic td {
-    background-color: lightgreen;
+.light .Piercing td, .heavy .Mystic td, .special .Explosive td {
+    background-color: pink;
     color: #212529;
 }
