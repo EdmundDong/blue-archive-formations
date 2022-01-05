@@ -1,10 +1,10 @@
 Vue.config.devtools = true
 const Airtable = require('airtable')
 const base = new Airtable({ apiKey: 'keyLfkfBG43VXN52y' }).base('app24peMma4LiqxIh')
-const columns = ['Student', 'Overall Tier', 'PVP Tier', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
-const columnsOverall = ['Student', 'Overall Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
-const columnsPvp = ['Student', 'PVP Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
-const columnsRaid = ['Student', 'Raid Tier', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columns = ['Student', 'Overall Tier', 'PVP Tier', 'Raid Tier', 'Academy', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columnsOverall = ['Student', 'Overall Tier', 'Academy', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columnsPvp = ['Student', 'PVP Tier', 'Academy', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
+const columnsRaid = ['Student', 'Raid Tier', 'Academy', 'ATK Type', 'DEF Type', 'Role', 'Class', 'ATK']
 const modes = ['Overall', 'PVP', 'Raid']
 const nTeams = [1, 2]
 
@@ -42,30 +42,48 @@ function applySynergy(students, weak, resist) {
     }
 }
 
-function formation(data, defEnemy = 'Overall', type = 'Overall') {
+function formation(data, defEnemy = 'Overall', environment = 'Overall', type = 'Overall') {
     // Resort students based on synergy
     const students = JSON.parse(JSON.stringify(data))
-    if (defEnemy === 'light') {
-        applySynergy(students, 'Explosive', 'Piercing')
-    } else if (defEnemy === 'heavy') {
-        applySynergy(students, 'Piercing', 'Mystic')
-    } else if (defEnemy === 'special') {
-        applySynergy(students, 'Mystic', 'Explosive')
+    switch (defEnemy) {
+        case ('light'):
+            applySynergy(students, 'Explosive', 'Piercing')
+            break
+        case ('heavy'):
+            applySynergy(students, 'Piercing', 'Mystic')
+            break
+        case ('special'):
+            applySynergy(students, 'Mystic', 'Explosive')
+    }
+    switch (environment) {
+        case ('light'):
+            break
+        case ('heavy'):
+            break
+        case ('special'):
     }
     students.sort((a, b) => a[type + ' Tier'] - b[type + ' Tier'] || b['ATK'] - a['ATK'])
     // Form teams
-    const nTeams = 2
+    const nTeams = 4
     let teams = []
     let tanks = students.filter(student => student['Class'] === 'Tank')
     let strikers = students.filter(student => student['Class'] != 'Tank' && student['Role'] === 'Striker')
     let healers = students.filter(student => student['Student'] === 'Serina' || student['Student'] === 'Hanae')
     let specials = students.filter(student => student['Class'] != 'Healer' && student['Role'] === 'Special')
     for (let loop = 0; loop < nTeams; loop++) {
-        teams.push(tanks.shift())
+        if (type === 'Raid') {
+            teams.push(strikers.shift())
+        } else {
+            teams.push(tanks.shift())
+        }
         teams.push(strikers.shift())
         teams.push(strikers.shift())
         teams.push(strikers.shift())
-        teams.push(healers.shift())
+        if (type === 'Raid' || loop > 1) { // && loop == nTeams - 1
+            teams.push(specials.shift())
+        } else {
+            teams.push(healers.shift())
+        }
         teams.push(specials.shift())
         if (loop < nTeams - 1) {
             teams.push('')
@@ -81,11 +99,11 @@ async function main() {
     // Overall
     const students = await formation(rawData)
     console.log('Overall', students)
-    const light = await formation(rawData, 'light')
+    const light = await formation(rawData, defEnemy='light')
     console.log('Overall Light', light)
-    const heavy = await formation(rawData, 'heavy')
+    const heavy = await formation(rawData, defEnemy='heavy')
     console.log('Overall Heavy', heavy)
-    const special = await formation(rawData, 'special')
+    const special = await formation(rawData, defEnemy='special')
     console.log('Overall Special', special)
 
     // PVP
@@ -93,11 +111,11 @@ async function main() {
     console.log('PVP', pvp)
 
     // Raid
-    const raidHeavy = await formation(rawData, 'light', 'Raid')
+    const raidHeavy = await formation(rawData, defEnemy='light', environment='default', type='Raid')
     console.log('Raid Heavy', raidHeavy)
-    const raidLight = await formation(rawData, 'heavy', 'Raid')
+    const raidLight = await formation(rawData, defEnemy='heavy', environment='default', type='Raid')
     console.log('Raid Light', raidLight)
-    const raidSpecial = await formation(rawData, 'special', 'Raid')
+    const raidSpecial = await formation(rawData, defEnemy='special', environment='default', type='Raid')
     console.log('Raid Special', raidSpecial)
 
     new Vue({
