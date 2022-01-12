@@ -42,7 +42,7 @@ function applySynergy(students, weak, resist) {
     }
 }
 
-function formation(data, defEnemy = 'Overall', environment = 'Overall', type = 'Overall') {
+function formation(data, type, defEnemy = 'Overall', environment = 'Overall') {
     // Resort students based on synergy
     const students = JSON.parse(JSON.stringify(data))
     switch (defEnemy) {
@@ -62,7 +62,9 @@ function formation(data, defEnemy = 'Overall', environment = 'Overall', type = '
             break
         case ('special'):
     }
+    console.log('pre-sort', type)
     students.sort((a, b) => a[type + ' Tier'] - b[type + ' Tier'] || b['ATK'] - a['ATK'])
+    console.log('post-sort', type)
     // Form teams
     const nTeams = 4
     let teams = []
@@ -99,23 +101,23 @@ async function main() {
     // Overall
     const students = await formation(rawData)
     console.log('Overall', students)
-    const light = await formation(rawData, defEnemy='light')
+    const light = await formation(rawData, type = 'Overall', defEnemy='light')
     console.log('Overall Light', light)
-    const heavy = await formation(rawData, defEnemy='heavy')
+    const heavy = await formation(rawData, type = 'Overall', defEnemy='heavy')
     console.log('Overall Heavy', heavy)
-    const special = await formation(rawData, defEnemy='special')
+    const special = await formation(rawData, type = 'Overall', defEnemy='special')
     console.log('Overall Special', special)
 
     // PVP
-    const pvp = await formation(rawData, 'PVP')
+    const pvp = await formation(rawData, type = 'PVP', )
     console.log('PVP', pvp)
 
     // Raid
-    const raidHeavy = await formation(rawData, defEnemy='light', environment='default', type='Raid')
+    const raidHeavy = await formation(rawData, type='Raid', defEnemy='heavy', environment='default')
     console.log('Raid Heavy', raidHeavy)
-    const raidLight = await formation(rawData, defEnemy='heavy', environment='default', type='Raid')
+    const raidLight = await formation(rawData, type='Raid', defEnemy='light', environment='default')
     console.log('Raid Light', raidLight)
-    const raidSpecial = await formation(rawData, defEnemy='special', environment='default', type='Raid')
+    const raidSpecial = await formation(rawData, type='Raid', defEnemy='special', environment='default')
     console.log('Raid Special', raidSpecial)
 
     new Vue({
