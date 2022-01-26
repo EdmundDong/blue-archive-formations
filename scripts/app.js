@@ -99,7 +99,7 @@ async function main() {
     const rawData = await pullData()
 
     // Overall
-    const students = await formation(rawData)
+    const students = await formation(rawData, type = 'Overall')
     console.log('Overall', students)
     const light = await formation(rawData, type = 'Overall', defEnemy='light')
     console.log('Overall Light', light)
